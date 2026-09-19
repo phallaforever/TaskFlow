@@ -218,6 +218,34 @@
             color: rgb(148 163 184);
         }
 
+        .task-summary {
+            display: block;
+            min-width: 0;
+            flex: 1;
+            border-radius: 0.75rem;
+            padding: 0.25rem 0.375rem;
+            text-align: left;
+            outline: none;
+            transition: background-color 150ms ease;
+        }
+
+        .task-summary:hover,
+        .task-summary:focus {
+            background: rgb(241 245 249);
+        }
+
+        .task-code {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 9999px;
+            background: rgb(238 242 255);
+            color: rgb(79 70 229);
+            padding: 0.125rem 0.375rem;
+            font-size: 0.625rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
         .edit-panel {
             border-radius: 1rem;
             border: 1px solid rgb(199 210 254);
@@ -275,6 +303,16 @@
             border-color: rgb(30 41 59 / 0.5);
             background: rgb(30 41 59 / 0.3);
             color: rgb(71 85 105);
+        }
+
+        .dark .task-summary:hover,
+        .dark .task-summary:focus {
+            background: rgb(51 65 85 / 0.65);
+        }
+
+        .dark .task-code {
+            background: rgb(49 46 129 / 0.5);
+            color: rgb(129 140 248);
         }
 
         .dark .edit-panel {
@@ -483,6 +521,10 @@
             <p id="details-description" class="mt-3 text-sm text-slate-500 dark:text-slate-400 break-words"></p>
             <dl class="mt-4 grid grid-cols-1 gap-2 text-xs">
                 <div class="detail-card">
+                    <dt class="font-semibold text-slate-400 dark:text-slate-500">Task ID</dt>
+                    <dd id="details-code" class="mt-0.5 text-slate-700 dark:text-slate-200"></dd>
+                </div>
+                <div class="detail-card">
                     <dt class="font-semibold text-slate-400 dark:text-slate-500">Due date</dt>
                     <dd id="details-due" class="mt-0.5 text-slate-700 dark:text-slate-200"></dd>
                 </div>
@@ -504,6 +546,7 @@
 
     <!-- Application Logic -->
     <script>
+        const taskCounterKey = 'taskCounter';
         const savedFilter = localStorage.getItem('taskFilter');
         let tasks = getStoredTasks();
         let currentFilter = ['all', 'today', 'active', 'completed'].includes(savedFilter) ? savedFilter : 'all';
@@ -543,6 +586,7 @@
         const detailsStatus = document.getElementById('details-status');
         const detailsTitle = document.getElementById('details-modal-title');
         const detailsDescription = document.getElementById('details-description');
+        const detailsCode = document.getElementById('details-code');
         const detailsDue = document.getElementById('details-due');
         const detailsCreated = document.getElementById('details-created');
         const detailsCompleted = document.getElementById('details-completed');
@@ -588,6 +632,7 @@
 
             const newTask = {
                 id: createTaskId(),
+                taskNo: getNextTaskNumber(),
                 title: title,
                 description: description,
                 dueDate: dueDate,
@@ -804,7 +849,7 @@
 
             if(searchQuery) {
                 filteredTasks = filteredTasks.filter(task => {
-                    const searchableText = `${task.title} ${task.description}`.toLowerCase();
+                    const searchableText = `${formatTaskCode(task.taskNo)} ${task.taskNo} ${task.title} ${task.description}`.toLowerCase();
                     return searchableText.includes(searchQuery);
                 });
             }
@@ -829,13 +874,17 @@
                     li.innerHTML = `
                         <div class="flex items-center gap-3 overflow-hidden flex-1 mr-2">
                             <input type="checkbox" ${task.completed ? 'checked' : ''} onclick="toggleTask(event, '${task.id}')" aria-label="${task.completed ? 'Mark active' : 'Mark complete'}: ${escapeHTML(task.title)}" class="w-5 h-5 text-indigo-600 rounded-md border-slate-300 dark:border-slate-600 focus:ring-indigo-500 cursor-pointer shrink-0">
-                            <div class="truncate flex-1">
-                                <button onclick="openTaskDetails('${task.id}')" type="button" class="block w-full text-left truncate text-sm font-medium ${task.completed ? 'line-through text-slate-400 dark:text-slate-600' : 'text-slate-700 dark:text-slate-200'} focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-md" aria-label="View task details: ${escapeHTML(task.title)}">${escapeHTML(task.title)}</button>
+                            <button onclick="openTaskDetails('${task.id}')" type="button" class="task-summary" aria-label="View task details: ${escapeHTML(task.title)}">
+                                <span class="flex items-center gap-2">
+                                    <span class="task-code">${formatTaskCode(task.taskNo)}</span>
+                                    <span class="truncate text-sm font-medium ${task.completed ? 'line-through text-slate-400 dark:text-slate-600' : 'text-slate-700 dark:text-slate-200'}">${escapeHTML(task.title)}</span>
+                                    <i class="fa-solid fa-chevron-right text-[10px] text-slate-300 dark:text-slate-600 shrink-0" aria-hidden="true"></i>
+                                </span>
                                 ${task.description ? `<p class="mt-0.5 truncate text-xs ${task.completed ? 'text-slate-400 dark:text-slate-600' : 'text-slate-500 dark:text-slate-400'}">${escapeHTML(task.description)}</p>` : ''}
                                 <div class="flex items-center gap-2 mt-0.5">
                                     ${dateMeta ? `<span class="text-[10px] ${dateMeta.className} flex items-center gap-1"><i class="fa-regular fa-calendar"></i> ${dateMeta.label}</span>` : ''}
                                 </div>
-                            </div>
+                            </button>
                         </div>
                         <div class="flex items-center gap-1 shrink-0">
                             <button onclick="startEditTask('${task.id}')" type="button" aria-label="Edit task: ${escapeHTML(task.title)}" class="icon-btn icon-btn-edit">
@@ -862,8 +911,9 @@
             detailsStatus.className = task.completed
                 ? 'text-[11px] font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400'
                 : 'text-[11px] font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-400';
-            detailsTitle.innerText = task.title;
+            detailsTitle.innerText = `${formatTaskCode(task.taskNo)} ${task.title}`;
             detailsDescription.innerText = task.description || 'No description added.';
+            detailsCode.innerText = formatTaskCode(task.taskNo);
             detailsDue.innerText = dateMeta ? dateMeta.label : 'No due date';
             detailsCreated.innerText = formatDateTime(task.createdAt);
             detailsCompleted.innerText = task.completedAt ? formatDateTime(task.completedAt) : 'Not completed yet';
@@ -937,7 +987,26 @@
         function getStoredTasks() {
             try {
                 const storedTasks = JSON.parse(localStorage.getItem('tasks')) || [];
-                return Array.isArray(storedTasks) ? storedTasks.map(normalizeTask).filter(task => task.title) : [];
+                if(!Array.isArray(storedTasks)) return [];
+                let nextTaskNo = getHighestTaskNumber(storedTasks) + 1;
+                let assignedMissingTaskNo = false;
+                return storedTasks.map(task => {
+                    const normalizedTask = normalizeTask(task);
+                    if(!normalizedTask.taskNo) {
+                        normalizedTask.taskNo = nextTaskNo;
+                        nextTaskNo += 1;
+                        assignedMissingTaskNo = true;
+                    }
+                    return normalizedTask;
+                }).filter(task => task.title).map((task, index, taskList) => {
+                    if(index === taskList.length - 1) {
+                        syncTaskCounter(taskList);
+                        if(assignedMissingTaskNo) {
+                            localStorage.setItem('tasks', JSON.stringify(taskList));
+                        }
+                    }
+                    return task;
+                });
             } catch {
                 return [];
             }
@@ -947,6 +1016,7 @@
             const title = String(task.title || task.text || '').trim();
             return {
                 id: String(task.id || createTaskId()),
+                taskNo: normalizeTaskNumber(task.taskNo),
                 title: title,
                 description: String(task.description || '').trim(),
                 dueDate: task.dueDate || '',
@@ -954,6 +1024,40 @@
                 completedAt: task.completedAt || null,
                 completed: Boolean(task.completed)
             };
+        }
+
+        function getNextTaskNumber() {
+            const storedCounter = Number(localStorage.getItem(taskCounterKey));
+            const nextTaskNo = Number.isInteger(storedCounter) && storedCounter > 0
+                ? storedCounter
+                : getHighestTaskNumber(tasks) + 1;
+            localStorage.setItem(taskCounterKey, String(nextTaskNo + 1));
+            return nextTaskNo;
+        }
+
+        function getHighestTaskNumber(taskList) {
+            return taskList.reduce((highest, task) => {
+                const taskNo = normalizeTaskNumber(task.taskNo);
+                return taskNo > highest ? taskNo : highest;
+            }, 0);
+        }
+
+        function normalizeTaskNumber(taskNo) {
+            const value = Number(taskNo);
+            return Number.isInteger(value) && value > 0 ? value : null;
+        }
+
+        function formatTaskCode(taskNo) {
+            const value = normalizeTaskNumber(taskNo);
+            return value ? `#${String(value).padStart(3, '0')}` : '#---';
+        }
+
+        function syncTaskCounter(taskList) {
+            const nextTaskNo = getHighestTaskNumber(taskList) + 1;
+            const storedCounter = Number(localStorage.getItem(taskCounterKey));
+            if(!Number.isInteger(storedCounter) || storedCounter < nextTaskNo) {
+                localStorage.setItem(taskCounterKey, String(nextTaskNo));
+            }
         }
 
         function createTaskId() {
