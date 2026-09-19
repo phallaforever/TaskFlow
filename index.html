@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskFlow - Mobile Daily Task Tracker</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Prevent pull-to-refresh or text-selection friction on mobile */
+        body {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .app-input,
+        .app-textarea {
+            width: 100%;
+            border: 1px solid rgb(226 232 240);
+            background: rgb(248 250 252);
+            color: rgb(30 41 59);
+            font-size: 0.875rem;
+            outline: none;
+        }
+
+        .app-input {
+            border-radius: 1rem;
+            padding: 0.875rem 1rem;
+        }
+
+        .app-textarea {
+            border-radius: 1rem;
+            padding: 0.75rem 1rem;
+            resize: none;
+        }
+
+        .app-input:focus,
+        .app-textarea:focus,
+        .btn:focus,
+        .icon-btn:focus {
+            box-shadow: 0 0 0 2px rgb(99 102 241);
+        }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            border-radius: 0.75rem;
+            padding: 0.625rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            transition: color 150ms ease, background-color 150ms ease, transform 150ms ease;
+            outline: none;
+        }
+
+        .btn-primary {
+            background: rgb(79 70 229);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: rgb(67 56 202);
+        }
+
+        .btn-success {
+            background: rgb(22 163 74);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: rgb(21 128 61);
+        }
+
+        .btn-danger {
+            background: rgb(225 29 72);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: rgb(190 18 60);
+        }
+
+        .btn-muted {
+            background: rgb(241 245 249);
+            color: rgb(100 116 139);
+        }
+
+        .btn-muted:hover {
+            color: rgb(79 70 229);
+        }
+
+        .btn-danger-soft {
+            background: rgb(241 245 249);
+            color: rgb(244 63 94);
+        }
+
+        .btn-danger-soft:hover {
+            background: rgb(255 241 242);
+        }
+
+        .quick-btn {
+            border-radius: 0.75rem;
+            background: rgb(241 245 249);
+            color: rgb(100 116 139);
+            padding: 0.5rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            transition: color 150ms ease, background-color 150ms ease;
+            outline: none;
+        }
+
+        .quick-btn:hover {
+            color: rgb(79 70 229);
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            align-items: center;
+            justify-content: center;
+            background: rgb(2 6 23 / 0.5);
+            padding-inline: 1rem;
+        }
+
+        .modal-panel {
+            width: 100%;
+            max-width: 24rem;
+            border-radius: 1rem;
+            border: 1px solid rgb(226 232 240);
+            background: white;
+            padding: 1.25rem;
+            box-shadow: 0 25px 50px -12px rgb(15 23 42 / 0.35);
+        }
+
+        .modal-icon {
+            display: flex;
+            width: 2.5rem;
+            height: 2.5rem;
+            flex-shrink: 0;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9999px;
+        }
+
+        .modal-icon-success {
+            background: rgb(236 253 245);
+            color: rgb(5 150 105);
+        }
+
+        .modal-icon-danger {
+            background: rgb(255 241 242);
+            color: rgb(225 29 72);
+        }
+
+        .icon-btn {
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            color: rgb(203 213 225);
+            transition: color 150ms ease;
+            outline: none;
+        }
+
+        .icon-btn-edit:hover {
+            color: rgb(99 102 241);
+        }
+
+        .icon-btn-danger:hover {
+            color: rgb(244 63 94);
+        }
+
+        .detail-card {
+            border-radius: 0.75rem;
+            background: rgb(248 250 252);
+            padding: 0.75rem;
+        }
+
+        .filter-btn {
+            border-radius: 0.75rem;
+            padding: 0.375rem 0.75rem;
+            color: rgb(148 163 184);
+            font-size: 0.75rem;
+            font-weight: 700;
+            transition: color 150ms ease, background-color 150ms ease;
+            outline: none;
+        }
+
+        .filter-btn:hover {
+            background: rgb(241 245 249);
+        }
+
+        .filter-btn-active {
+            background: rgb(238 242 255);
+            color: rgb(79 70 229);
+        }
+
+        .task-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-radius: 1rem;
+            border: 1px solid rgb(241 245 249);
+            background: rgb(248 250 252);
+            padding: 0.875rem;
+            transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+        }
+
+        .task-row-completed {
+            border-color: rgb(241 245 249 / 0.5);
+            background: rgb(248 250 252 / 0.5);
+            color: rgb(148 163 184);
+        }
+
+        .edit-panel {
+            border-radius: 1rem;
+            border: 1px solid rgb(199 210 254);
+            background: rgb(238 242 255 / 0.6);
+            padding: 0.875rem;
+        }
+
+        .dark .app-input,
+        .dark .app-textarea {
+            border-color: rgb(51 65 85);
+            background: rgb(30 41 59);
+            color: rgb(241 245 249);
+        }
+
+        .dark .btn-muted,
+        .dark .quick-btn,
+        .dark .btn-danger-soft,
+        .dark .detail-card {
+            background: rgb(30 41 59);
+            color: rgb(148 163 184);
+        }
+
+        .dark .btn-danger-soft {
+            color: rgb(251 113 133);
+        }
+
+        .dark .btn-danger-soft:hover {
+            background: rgb(76 5 25 / 0.4);
+        }
+
+        .dark .modal-panel {
+            border-color: rgb(51 65 85);
+            background: rgb(15 23 42);
+        }
+
+        .dark .filter-btn {
+            color: rgb(100 116 139);
+        }
+
+        .dark .filter-btn:hover {
+            background: rgb(30 41 59);
+        }
+
+        .dark .filter-btn-active {
+            background: rgb(49 46 129 / 0.5);
+            color: rgb(129 140 248);
+        }
+
+        .dark .task-row {
+            border-color: rgb(30 41 59);
+            background: rgb(30 41 59 / 0.8);
+        }
+
+        .dark .task-row-completed {
+            border-color: rgb(30 41 59 / 0.5);
+            background: rgb(30 41 59 / 0.3);
+            color: rgb(71 85 105);
+        }
+
+        .dark .edit-panel {
+            border-color: rgb(49 46 129);
+            background: rgb(30 27 75 / 0.2);
+        }
+
+        .dark .modal-icon-success {
+            background: rgb(2 44 34 / 0.5);
+            color: rgb(52 211 153);
+        }
+
+        .dark .modal-icon-danger {
+            background: rgb(76 5 25 / 0.5);
+            color: rgb(251 113 133);
+        }
+
+        .dark .icon-btn {
+            color: rgb(71 85 105);
+        }
+
+        .dark .icon-btn-edit:hover {
+            color: rgb(129 140 248);
+        }
+
+        .dark .icon-btn-danger:hover {
+            color: rgb(251 113 133);
+        }
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-950 min-h-screen min-h-dvh text-slate-800 dark:text-slate-100 flex flex-col justify-between transition-colors duration-200">
+
+    <main class="max-w-md w-full mx-auto p-4 sm:p-6 my-0 sm:my-10 bg-white dark:bg-slate-900 rounded-none sm:rounded-3xl shadow-none sm:shadow-2xl border-0 sm:border border-slate-200 dark:border-slate-800 flex flex-col min-h-screen min-h-dvh sm:min-h-0 sm:h-auto">
+        
+        <!-- App Header -->
+        <header class="flex items-center justify-between mb-5 pt-2 sm:pt-0">
+            <div>
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-indigo-600 dark:text-indigo-400 tracking-tight flex items-center gap-2">
+                    <i class="fa-solid fa-list-check"></i> TaskFlow
+                </h1>
+                <p class="text-xs sm:text-sm text-slate-400 dark:text-slate-500 mt-0.5">Conquer your day, one task at a time.</p>
+            </div>
+            <!-- Dark Mode Toggle Button -->
+            <button onclick="toggleDarkMode()" id="theme-toggle" type="button" aria-label="Switch to dark mode" class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-yellow-400 transition hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900">
+                <i id="dark-mode-icon" class="fa-solid fa-moon text-lg"></i>
+            </button>
+        </header>
+
+        <!-- Task Stats -->
+        <section aria-label="Task stats" class="mb-5 bg-slate-50 dark:bg-slate-800/50 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800">
+            <div class="flex justify-between text-xs font-semibold mb-2">
+                <span id="task-count" class="text-indigo-600 dark:text-indigo-400">0 tasks left</span>
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-center text-[11px] font-semibold">
+                <div class="rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 py-2">
+                    <span id="today-count" class="block text-slate-700 dark:text-slate-200 text-sm">0</span>
+                    <span class="text-slate-400 dark:text-slate-500">Today</span>
+                </div>
+                <div class="rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 py-2">
+                    <span id="overdue-count" class="block text-rose-500 dark:text-rose-400 text-sm">0</span>
+                    <span class="text-slate-400 dark:text-slate-500">Overdue</span>
+                </div>
+                <div class="rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 py-2">
+                    <span id="done-count" class="block text-emerald-600 dark:text-emerald-400 text-sm">0</span>
+                    <span class="text-slate-400 dark:text-slate-500">Done</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Add Task Form -->
+        <form id="task-form" class="space-y-2.5 mb-5">
+            <div class="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2">
+                <label for="task-input" class="sr-only">Task title</label>
+                <input 
+                    type="text" 
+                    id="task-input" 
+                    placeholder="Task title" 
+                    required
+                    autocomplete="off"
+                    class="app-input flex-1"
+                >
+                <label for="date-input" class="sr-only">Due date</label>
+                <input 
+                    type="date" 
+                    id="date-input" 
+                    class="app-input"
+                >
+                <button 
+                    type="submit" 
+                    class="btn btn-primary px-5 py-3.5 shadow-lg shadow-indigo-600/20"
+                >
+                    <i class="fa-solid fa-plus"></i> Add
+                </button>
+            </div>
+            <label for="description-input" class="sr-only">Task description</label>
+            <textarea
+                id="description-input"
+                rows="2"
+                placeholder="Task description"
+                class="app-textarea"
+            ></textarea>
+            <div class="grid grid-cols-3 gap-2">
+                <button type="button" onclick="setQuickDate(0)" class="quick-btn">Today</button>
+                <button type="button" onclick="setQuickDate(1)" class="quick-btn">Tomorrow</button>
+                <button type="button" onclick="setQuickDate(null)" class="quick-btn">No date</button>
+            </div>
+        </form>
+
+        <!-- Filters & Clear Bar -->
+        <div class="space-y-3 mb-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+            <label for="search-input" class="sr-only">Search tasks</label>
+            <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300 dark:text-slate-600 text-xs"></i>
+                <input
+                    type="search"
+                    id="search-input"
+                    placeholder="Search tasks"
+                    autocomplete="off"
+                    class="app-input pl-9 pr-3.5 py-2.5"
+                >
+            </div>
+            <div class="flex items-center justify-between gap-3">
+                <div class="flex gap-1.5 overflow-x-auto pb-0.5">
+                <button onclick="setFilter('all')" type="button" id="filter-all" aria-pressed="true" class="filter-btn filter-btn-active">All</button>
+                <button onclick="setFilter('today')" type="button" id="filter-today" aria-pressed="false" class="filter-btn">Today</button>
+                <button onclick="setFilter('active')" type="button" id="filter-active" aria-pressed="false" class="filter-btn">Active</button>
+                <button onclick="setFilter('completed')" type="button" id="filter-completed" aria-pressed="false" class="filter-btn">Done</button>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <button onclick="clearCompletedTasks()" type="button" id="clear-completed" class="text-xs font-medium text-slate-400 hover:text-rose-500 disabled:hover:text-slate-400 dark:hover:text-rose-400 dark:disabled:hover:text-slate-400 transition disabled:opacity-40 disabled:cursor-not-allowed">Clear Done</button>
+                    <button onclick="clearAllTasks()" type="button" id="clear-all" class="text-xs font-medium text-slate-400 hover:text-rose-500 disabled:hover:text-slate-400 dark:hover:text-rose-400 dark:disabled:hover:text-slate-400 transition disabled:opacity-40 disabled:cursor-not-allowed">Clear All</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Task List Container (Scrollable) -->
+        <div class="flex-1 overflow-y-auto min-h-[200px] max-h-[350px] sm:max-h-[280px] pr-1">
+            <ul id="task-list" class="space-y-2.5" aria-live="polite">
+                <!-- Dynamic tasks populated here -->
+            </ul>
+            
+            <!-- Empty State -->
+            <div id="empty-state" class="text-center py-12 text-slate-400 dark:text-slate-600 hidden">
+                <i class="fa-regular fa-face-smile text-4xl mb-2"></i>
+                <p id="empty-title" class="text-sm font-medium">All caught up! Time to relax.</p>
+                <p id="empty-detail" class="text-xs mt-1">Add a task to start planning your day.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center py-4 text-xs text-slate-400 dark:text-slate-600 hidden sm:block">
+        TaskFlow Mobile &bull; Optimized for your phone
+    </footer>
+
+    <!-- Complete Task Confirmation -->
+    <div id="complete-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="complete-modal-title">
+        <div class="modal-panel">
+            <div class="flex items-start gap-3">
+                <div class="modal-icon modal-icon-success">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <div class="min-w-0">
+                    <h2 id="complete-modal-title" class="text-base font-bold text-slate-800 dark:text-slate-100">Complete task?</h2>
+                    <p id="complete-modal-task" class="mt-1 text-sm text-slate-500 dark:text-slate-400 break-words"></p>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2 mt-5">
+                <button id="cancel-complete" type="button" class="btn btn-muted">Cancel</button>
+                <button id="confirm-complete" type="button" class="btn btn-success">Complete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation -->
+    <div id="delete-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
+        <div class="modal-panel">
+            <div class="flex items-start gap-3">
+                <div class="modal-icon modal-icon-danger">
+                    <i class="fa-solid fa-trash-can"></i>
+                </div>
+                <div class="min-w-0">
+                    <h2 id="delete-modal-title" class="text-base font-bold text-slate-800 dark:text-slate-100">Delete task?</h2>
+                    <p id="delete-modal-message" class="mt-1 text-sm text-slate-500 dark:text-slate-400 break-words">This cannot be undone.</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2 mt-5">
+                <button id="cancel-delete" type="button" class="btn btn-muted">Cancel</button>
+                <button id="confirm-delete" type="button" class="btn btn-danger">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Details -->
+    <div id="details-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="details-modal-title">
+        <div class="modal-panel">
+            <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <p id="details-status" class="text-[11px] font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-400">Task details</p>
+                    <h2 id="details-modal-title" class="mt-1 text-lg font-bold text-slate-800 dark:text-slate-100 break-words"></h2>
+                </div>
+                <button id="close-details" type="button" aria-label="Close task details" class="icon-btn icon-btn-edit w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 shrink-0">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <p id="details-description" class="mt-3 text-sm text-slate-500 dark:text-slate-400 break-words"></p>
+            <dl class="mt-4 grid grid-cols-1 gap-2 text-xs">
+                <div class="detail-card">
+                    <dt class="font-semibold text-slate-400 dark:text-slate-500">Due date</dt>
+                    <dd id="details-due" class="mt-0.5 text-slate-700 dark:text-slate-200"></dd>
+                </div>
+                <div class="detail-card">
+                    <dt class="font-semibold text-slate-400 dark:text-slate-500">Created</dt>
+                    <dd id="details-created" class="mt-0.5 text-slate-700 dark:text-slate-200"></dd>
+                </div>
+                <div class="detail-card">
+                    <dt class="font-semibold text-slate-400 dark:text-slate-500">Completed</dt>
+                    <dd id="details-completed" class="mt-0.5 text-slate-700 dark:text-slate-200"></dd>
+                </div>
+            </dl>
+            <div class="grid grid-cols-2 gap-2 mt-5">
+                <button id="details-edit" type="button" class="btn btn-primary">Edit</button>
+                <button id="details-delete" type="button" class="btn btn-danger-soft">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Logic -->
+    <script>
+        const savedFilter = localStorage.getItem('taskFilter');
+        let tasks = getStoredTasks();
+        let currentFilter = ['all', 'today', 'active', 'completed'].includes(savedFilter) ? savedFilter : 'all';
+        let searchQuery = '';
+        let pendingCompleteTaskId = null;
+        let pendingDeleteAction = null;
+        let currentDetailsTaskId = null;
+
+        // Elements
+        const taskForm = document.getElementById('task-form');
+        const taskInput = document.getElementById('task-input');
+        const descriptionInput = document.getElementById('description-input');
+        const dateInput = document.getElementById('date-input');
+        const searchInput = document.getElementById('search-input');
+        const taskList = document.getElementById('task-list');
+        const emptyState = document.getElementById('empty-state');
+        const taskCount = document.getElementById('task-count');
+        const todayCount = document.getElementById('today-count');
+        const overdueCount = document.getElementById('overdue-count');
+        const doneCount = document.getElementById('done-count');
+        const darkModeIcon = document.getElementById('dark-mode-icon');
+        const themeToggle = document.getElementById('theme-toggle');
+        const clearCompleted = document.getElementById('clear-completed');
+        const clearAll = document.getElementById('clear-all');
+        const emptyTitle = document.getElementById('empty-title');
+        const emptyDetail = document.getElementById('empty-detail');
+        const completeModal = document.getElementById('complete-modal');
+        const completeModalTask = document.getElementById('complete-modal-task');
+        const cancelComplete = document.getElementById('cancel-complete');
+        const confirmComplete = document.getElementById('confirm-complete');
+        const deleteModal = document.getElementById('delete-modal');
+        const deleteModalTitle = document.getElementById('delete-modal-title');
+        const deleteModalMessage = document.getElementById('delete-modal-message');
+        const cancelDelete = document.getElementById('cancel-delete');
+        const confirmDelete = document.getElementById('confirm-delete');
+        const detailsModal = document.getElementById('details-modal');
+        const detailsStatus = document.getElementById('details-status');
+        const detailsTitle = document.getElementById('details-modal-title');
+        const detailsDescription = document.getElementById('details-description');
+        const detailsDue = document.getElementById('details-due');
+        const detailsCreated = document.getElementById('details-created');
+        const detailsCompleted = document.getElementById('details-completed');
+        const closeDetailsButton = document.getElementById('close-details');
+        const detailsEditButton = document.getElementById('details-edit');
+        const detailsDeleteButton = document.getElementById('details-delete');
+
+        // Set default date to today
+        dateInput.valueAsDate = new Date();
+
+        // Initialize Dark Mode preference from local storage
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            darkModeIcon.className = "fa-solid fa-sun text-lg";
+            themeToggle.setAttribute('aria-label', 'Switch to light mode');
+        } else {
+            document.documentElement.classList.remove('dark');
+            darkModeIcon.className = "fa-solid fa-moon text-lg";
+            themeToggle.setAttribute('aria-label', 'Switch to dark mode');
+        }
+
+        function toggleDarkMode() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+                darkModeIcon.className = "fa-solid fa-moon text-lg";
+                themeToggle.setAttribute('aria-label', 'Switch to dark mode');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                darkModeIcon.className = "fa-solid fa-sun text-lg";
+                themeToggle.setAttribute('aria-label', 'Switch to light mode');
+            }
+        }
+
+        // Add task event
+        taskForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const title = taskInput.value.trim();
+            const description = descriptionInput.value.trim();
+            const dueDate = dateInput.value;
+            if(!title) return;
+
+            const newTask = {
+                id: createTaskId(),
+                title: title,
+                description: description,
+                dueDate: dueDate,
+                createdAt: new Date().toISOString(),
+                completedAt: null,
+                completed: false
+            };
+
+            tasks.push(newTask);
+            saveAndRender();
+            taskInput.value = '';
+            descriptionInput.value = '';
+            dateInput.valueAsDate = new Date();
+            taskInput.blur(); // Dismiss mobile keyboard
+        });
+
+        searchInput.addEventListener('input', (e) => {
+            searchQuery = e.target.value.trim().toLowerCase();
+            renderTasks();
+        });
+
+        cancelComplete.addEventListener('click', closeCompleteModal);
+        confirmComplete.addEventListener('click', completePendingTask);
+        completeModal.addEventListener('click', (e) => {
+            if(e.target === completeModal) closeCompleteModal();
+        });
+        cancelDelete.addEventListener('click', closeDeleteModal);
+        confirmDelete.addEventListener('click', runPendingDeleteAction);
+        deleteModal.addEventListener('click', (e) => {
+            if(e.target === deleteModal) closeDeleteModal();
+        });
+        closeDetailsButton.addEventListener('click', closeTaskDetails);
+        detailsModal.addEventListener('click', (e) => {
+            if(e.target === detailsModal) closeTaskDetails();
+        });
+        detailsEditButton.addEventListener('click', () => {
+            const id = currentDetailsTaskId;
+            closeTaskDetails();
+            if(id) startEditTask(id);
+        });
+        detailsDeleteButton.addEventListener('click', () => {
+            const id = currentDetailsTaskId;
+            closeTaskDetails();
+            if(id) deleteTask(id);
+        });
+        document.addEventListener('keydown', (e) => {
+            if(e.key === 'Escape' && !completeModal.classList.contains('hidden')) {
+                closeCompleteModal();
+            }
+            if(e.key === 'Escape' && !deleteModal.classList.contains('hidden')) {
+                closeDeleteModal();
+            }
+            if(e.key === 'Escape' && !detailsModal.classList.contains('hidden')) {
+                closeTaskDetails();
+            }
+        });
+
+        function saveAndRender() {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+            renderTasks();
+        }
+
+        function toggleTask(event, id) {
+            if(event) event.preventDefault();
+            const selectedTask = tasks.find(task => task.id === id);
+            if(!selectedTask) return;
+
+            if(!selectedTask.completed) {
+                openCompleteModal(selectedTask);
+                return;
+            }
+
+            tasks = tasks.map(task => {
+                if(task.id !== id) return task;
+                return { ...task, completed: false, completedAt: null };
+            });
+            saveAndRender();
+        }
+
+        function openCompleteModal(task) {
+            pendingCompleteTaskId = task.id;
+            completeModalTask.innerText = task.title;
+            completeModal.classList.remove('hidden');
+            completeModal.classList.add('flex');
+            confirmComplete.focus();
+            renderTasks();
+        }
+
+        function closeCompleteModal() {
+            pendingCompleteTaskId = null;
+            completeModal.classList.add('hidden');
+            completeModal.classList.remove('flex');
+            renderTasks();
+        }
+
+        function completePendingTask() {
+            if(!pendingCompleteTaskId) return;
+            tasks = tasks.map(task => {
+                if(task.id !== pendingCompleteTaskId) return task;
+                return { ...task, completed: true, completedAt: new Date().toISOString() };
+            });
+            pendingCompleteTaskId = null;
+            completeModal.classList.add('hidden');
+            completeModal.classList.remove('flex');
+            saveAndRender();
+        }
+
+        function updateTask(id, updates) {
+            tasks = tasks.map(task => {
+                if(task.id !== id) return task;
+                return { ...task, ...updates };
+            });
+            saveAndRender();
+        }
+
+        function deleteTask(id) {
+            const task = tasks.find(item => item.id === id);
+            if(!task) return;
+            openDeleteModal({
+                title: 'Delete task?',
+                message: `Remove "${task.title}"? This cannot be undone.`,
+                actionLabel: 'Delete',
+                action: () => {
+                    tasks = tasks.filter(item => item.id !== id);
+                    saveAndRender();
+                }
+            });
+        }
+
+        function clearCompletedTasks() {
+            const completedTasks = tasks.filter(task => task.completed).length;
+            if(completedTasks === 0) return;
+            openDeleteModal({
+                title: 'Clear completed tasks?',
+                message: `Remove ${completedTasks} completed task${completedTasks === 1 ? '' : 's'}? This cannot be undone.`,
+                actionLabel: 'Clear Done',
+                action: () => {
+                    tasks = tasks.filter(task => !task.completed);
+                    saveAndRender();
+                }
+            });
+        }
+
+        function clearAllTasks() {
+            if(tasks.length === 0) return;
+            openDeleteModal({
+                title: 'Clear all tasks?',
+                message: `Remove all ${tasks.length} task${tasks.length === 1 ? '' : 's'}? This cannot be undone.`,
+                actionLabel: 'Clear All',
+                action: () => {
+                    tasks = [];
+                    saveAndRender();
+                }
+            });
+        }
+
+        function openDeleteModal({ title, message, actionLabel, action }) {
+            pendingDeleteAction = action;
+            deleteModalTitle.innerText = title;
+            deleteModalMessage.innerText = message;
+            confirmDelete.innerText = actionLabel;
+            deleteModal.classList.remove('hidden');
+            deleteModal.classList.add('flex');
+            confirmDelete.focus();
+        }
+
+        function closeDeleteModal() {
+            pendingDeleteAction = null;
+            deleteModal.classList.add('hidden');
+            deleteModal.classList.remove('flex');
+        }
+
+        function runPendingDeleteAction() {
+            if(!pendingDeleteAction) return;
+            const action = pendingDeleteAction;
+            closeDeleteModal();
+            action();
+        }
+
+        function setQuickDate(daysFromToday) {
+            if(daysFromToday === null) {
+                dateInput.value = '';
+                taskInput.focus();
+                return;
+            }
+            const date = new Date();
+            date.setDate(date.getDate() + daysFromToday);
+            dateInput.value = formatDateInput(date);
+            taskInput.focus();
+        }
+
+        function setFilter(filter) {
+            currentFilter = filter;
+            localStorage.setItem('taskFilter', filter);
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.className = "filter-btn";
+                btn.setAttribute('aria-pressed', 'false');
+            });
+            const activeFilter = document.getElementById(`filter-${filter}`);
+            activeFilter.className = "filter-btn filter-btn-active";
+            activeFilter.setAttribute('aria-pressed', 'true');
+            renderTasks();
+        }
+
+        function renderTasks() {
+            let filteredTasks = tasks;
+            if(currentFilter === 'active') {
+                filteredTasks = tasks.filter(t => !t.completed);
+            } else if(currentFilter === 'completed') {
+                filteredTasks = tasks.filter(t => t.completed);
+            } else if(currentFilter === 'today') {
+                filteredTasks = tasks.filter(t => !t.completed && getDayDifference(t.dueDate) === 0);
+            }
+
+            if(searchQuery) {
+                filteredTasks = filteredTasks.filter(task => {
+                    const searchableText = `${task.title} ${task.description}`.toLowerCase();
+                    return searchableText.includes(searchQuery);
+                });
+            }
+
+            taskList.innerHTML = '';
+            
+            if(filteredTasks.length === 0) {
+                updateEmptyState();
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                filteredTasks
+                    .slice()
+                    .sort(sortTasks)
+                    .forEach(task => {
+                    const li = document.createElement('li');
+                    li.id = `task-${task.id}`;
+                    li.className = `task-row ${task.completed ? 'task-row-completed' : ''}`;
+                    
+                    const dateMeta = getDueDateMeta(task);
+
+                    li.innerHTML = `
+                        <div class="flex items-center gap-3 overflow-hidden flex-1 mr-2">
+                            <input type="checkbox" ${task.completed ? 'checked' : ''} onclick="toggleTask(event, '${task.id}')" aria-label="${task.completed ? 'Mark active' : 'Mark complete'}: ${escapeHTML(task.title)}" class="w-5 h-5 text-indigo-600 rounded-md border-slate-300 dark:border-slate-600 focus:ring-indigo-500 cursor-pointer shrink-0">
+                            <div class="truncate flex-1">
+                                <button onclick="openTaskDetails('${task.id}')" type="button" class="block w-full text-left truncate text-sm font-medium ${task.completed ? 'line-through text-slate-400 dark:text-slate-600' : 'text-slate-700 dark:text-slate-200'} focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-md" aria-label="View task details: ${escapeHTML(task.title)}">${escapeHTML(task.title)}</button>
+                                ${task.description ? `<p class="mt-0.5 truncate text-xs ${task.completed ? 'text-slate-400 dark:text-slate-600' : 'text-slate-500 dark:text-slate-400'}">${escapeHTML(task.description)}</p>` : ''}
+                                <div class="flex items-center gap-2 mt-0.5">
+                                    ${dateMeta ? `<span class="text-[10px] ${dateMeta.className} flex items-center gap-1"><i class="fa-regular fa-calendar"></i> ${dateMeta.label}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1 shrink-0">
+                            <button onclick="startEditTask('${task.id}')" type="button" aria-label="Edit task: ${escapeHTML(task.title)}" class="icon-btn icon-btn-edit">
+                                <i class="fa-solid fa-pen text-sm"></i>
+                            </button>
+                            <button onclick="deleteTask('${task.id}')" type="button" aria-label="Delete task: ${escapeHTML(task.title)}" class="icon-btn icon-btn-danger">
+                                <i class="fa-solid fa-trash-can text-sm"></i>
+                            </button>
+                        </div>
+                    `;
+                    taskList.appendChild(li);
+                });
+            }
+            updateStats();
+        }
+
+        function openTaskDetails(id) {
+            const task = tasks.find(item => item.id === id);
+            if(!task) return;
+            const dateMeta = getDueDateMeta(task);
+
+            currentDetailsTaskId = id;
+            detailsStatus.innerText = task.completed ? 'Completed task' : 'Active task';
+            detailsStatus.className = task.completed
+                ? 'text-[11px] font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400'
+                : 'text-[11px] font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-400';
+            detailsTitle.innerText = task.title;
+            detailsDescription.innerText = task.description || 'No description added.';
+            detailsDue.innerText = dateMeta ? dateMeta.label : 'No due date';
+            detailsCreated.innerText = formatDateTime(task.createdAt);
+            detailsCompleted.innerText = task.completedAt ? formatDateTime(task.completedAt) : 'Not completed yet';
+            detailsModal.classList.remove('hidden');
+            detailsModal.classList.add('flex');
+            closeDetailsButton.focus();
+        }
+
+        function closeTaskDetails() {
+            currentDetailsTaskId = null;
+            detailsModal.classList.add('hidden');
+            detailsModal.classList.remove('flex');
+        }
+
+        function updateStats() {
+            const totalTasks = tasks.length;
+            const completedTasks = tasks.filter(t => t.completed).length;
+            const activeTasks = totalTasks - completedTasks;
+            const dueTodayTasks = tasks.filter(t => !t.completed && getDayDifference(t.dueDate) === 0).length;
+            const overdueTasks = tasks.filter(t => !t.completed && getDayDifference(t.dueDate) < 0).length;
+            
+            taskCount.innerText = `${activeTasks} task${activeTasks === 1 ? '' : 's'} left`;
+            todayCount.innerText = dueTodayTasks;
+            overdueCount.innerText = overdueTasks;
+            doneCount.innerText = completedTasks;
+            clearCompleted.disabled = completedTasks === 0;
+            clearAll.disabled = totalTasks === 0;
+        }
+
+        function startEditTask(id) {
+            const task = tasks.find(item => item.id === id);
+            if(!task) return;
+
+            const li = document.createElement('li');
+            li.className = 'edit-panel';
+            li.innerHTML = `
+                <form onsubmit="saveEditedTask(event, '${task.id}')" class="space-y-2">
+                    <label for="edit-title-${task.id}" class="sr-only">Edit task title</label>
+                    <input id="edit-title-${task.id}" value="${escapeHTML(task.title)}" required class="app-input py-2.5">
+                    <label for="edit-description-${task.id}" class="sr-only">Edit task description</label>
+                    <textarea id="edit-description-${task.id}" rows="2" class="app-textarea py-2.5">${escapeHTML(task.description)}</textarea>
+                    <div class="grid grid-cols-1 gap-2">
+                        <label for="edit-date-${task.id}" class="sr-only">Edit due date</label>
+                        <input type="date" id="edit-date-${task.id}" value="${escapeHTML(task.dueDate)}" class="app-input py-2.5">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="button" onclick="renderTasks()" class="btn btn-muted">Cancel</button>
+                    </div>
+                </form>
+            `;
+
+            const currentRow = document.getElementById(`task-${task.id}`);
+            if(currentRow) {
+                currentRow.replaceWith(li);
+                document.getElementById(`edit-title-${task.id}`).focus();
+            }
+        }
+
+        function saveEditedTask(event, id) {
+            event.preventDefault();
+            const title = document.getElementById(`edit-title-${id}`).value.trim();
+            if(!title) return;
+            updateTask(id, {
+                title,
+                description: document.getElementById(`edit-description-${id}`).value.trim(),
+                dueDate: document.getElementById(`edit-date-${id}`).value
+            });
+        }
+
+        function getStoredTasks() {
+            try {
+                const storedTasks = JSON.parse(localStorage.getItem('tasks')) || [];
+                return Array.isArray(storedTasks) ? storedTasks.map(normalizeTask).filter(task => task.title) : [];
+            } catch {
+                return [];
+            }
+        }
+
+        function normalizeTask(task) {
+            const title = String(task.title || task.text || '').trim();
+            return {
+                id: String(task.id || createTaskId()),
+                title: title,
+                description: String(task.description || '').trim(),
+                dueDate: task.dueDate || '',
+                createdAt: task.createdAt || new Date().toISOString(),
+                completedAt: task.completedAt || null,
+                completed: Boolean(task.completed)
+            };
+        }
+
+        function createTaskId() {
+            return window.crypto && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        }
+
+        function formatDateInput(date) {
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        }
+
+        function formatDateTime(dateString) {
+            if(!dateString) return 'Unknown';
+            const date = new Date(dateString);
+            if(Number.isNaN(date.getTime())) return 'Unknown';
+            return date.toLocaleString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit'
+            });
+        }
+
+        function getDueDateMeta(task) {
+            if(!task.dueDate) return null;
+            const daysFromToday = getDayDifference(task.dueDate);
+            const dateObj = new Date(task.dueDate + 'T00:00:00');
+            const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+            if(!task.completed && daysFromToday < 0) {
+                return { label: `Overdue - ${formattedDate}`, className: 'text-rose-500 dark:text-rose-400 font-semibold' };
+            }
+            if(daysFromToday === 0) {
+                return { label: 'Today', className: 'text-amber-600 dark:text-amber-400 font-semibold' };
+            }
+            if(daysFromToday === 1) {
+                return { label: 'Tomorrow', className: 'text-slate-400 dark:text-slate-500' };
+            }
+            return { label: formattedDate, className: 'text-slate-400 dark:text-slate-500' };
+        }
+
+        function getDayDifference(dateString) {
+            if(!dateString) return Number.POSITIVE_INFINITY;
+            const dateObj = new Date(dateString + 'T00:00:00');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            return Math.round((dateObj - today) / 86400000);
+        }
+
+        function sortTasks(a, b) {
+            if(a.completed !== b.completed) return a.completed ? 1 : -1;
+            if(a.dueDate && b.dueDate && a.dueDate !== b.dueDate) return a.dueDate.localeCompare(b.dueDate);
+            if(a.dueDate && !b.dueDate) return -1;
+            if(!a.dueDate && b.dueDate) return 1;
+            return new Date(a.createdAt) - new Date(b.createdAt);
+        }
+
+        function updateEmptyState() {
+            const messages = {
+                all: ['No tasks yet.', 'Add a task to start planning your day.'],
+                today: ['Nothing due today.', 'Use another filter to see upcoming tasks.'],
+                active: ['All caught up!', 'Completed tasks stay in Done until you clear them.'],
+                completed: ['No completed tasks.', 'Finish a task and it will show up here.']
+            };
+            if(searchQuery) {
+                emptyTitle.innerText = 'No matching tasks.';
+                emptyDetail.innerText = 'Try a different search term or filter.';
+                return;
+            }
+            const [title, detail] = messages[currentFilter] || messages.all;
+            emptyTitle.innerText = title;
+            emptyDetail.innerText = detail;
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+        }
+
+        setFilter(currentFilter);
+    </script>
+</body>
+</html>
