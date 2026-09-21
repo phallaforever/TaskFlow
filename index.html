@@ -15,8 +15,20 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* Prevent pull-to-refresh or text-selection friction on mobile */
+        :root {
+            --motion-fast: 160ms;
+            --motion-med: 260ms;
+            --motion-slow: 420ms;
+            --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+            --ease-spring: cubic-bezier(0.2, 0.9, 0.2, 1.18);
+        }
+
         body {
             -webkit-tap-highlight-color: transparent;
+        }
+
+        .app-shell {
+            animation: app-shell-in var(--motion-slow) var(--ease-out) both;
         }
 
         .app-input,
@@ -27,6 +39,7 @@
             color: rgb(30 41 59);
             font-size: 0.875rem;
             outline: none;
+            transition: border-color var(--motion-fast) ease, background-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, transform var(--motion-fast) var(--ease-out);
         }
 
         .app-input {
@@ -38,6 +51,11 @@
             border-radius: 1rem;
             padding: 0.75rem 1rem;
             resize: none;
+        }
+
+        .app-input:focus,
+        .app-textarea:focus {
+            transform: translateY(-1px);
         }
 
         .app-input:focus,
@@ -56,8 +74,16 @@
             padding: 0.625rem 0.75rem;
             font-size: 0.75rem;
             font-weight: 700;
-            transition: color 150ms ease, background-color 150ms ease, transform 150ms ease;
+            transition: color var(--motion-fast) ease, background-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, transform var(--motion-fast) var(--ease-out);
             outline: none;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(1px) scale(0.98);
         }
 
         .btn-primary {
@@ -112,12 +138,73 @@
             padding: 0.5rem 0.75rem;
             font-size: 0.75rem;
             font-weight: 700;
-            transition: color 150ms ease, background-color 150ms ease;
+            transition: color var(--motion-fast) ease, background-color var(--motion-fast) ease, transform var(--motion-fast) var(--ease-out);
             outline: none;
         }
 
         .quick-btn:hover {
             color: rgb(79 70 229);
+            transform: translateY(-1px);
+        }
+
+        .quick-btn:active {
+            transform: translateY(1px) scale(0.98);
+        }
+
+        .create-tools {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+
+        .details-toggle {
+            display: inline-flex;
+            min-height: 2rem;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            border-radius: 0.7rem;
+            padding: 0.45rem 0.65rem;
+            color: rgb(99 102 241);
+            background: rgb(238 242 255);
+            font-size: 0.72rem;
+            font-weight: 800;
+            line-height: 1;
+            transition: color var(--motion-fast) ease, background-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, transform var(--motion-fast) var(--ease-out);
+            outline: none;
+        }
+
+        .details-toggle:hover {
+            background: rgb(224 231 255);
+            transform: translateY(-1px);
+        }
+
+        .details-toggle:focus-visible {
+            box-shadow: 0 0 0 2px rgb(199 210 254);
+        }
+
+        .details-toggle:active {
+            transform: translateY(1px) scale(0.98);
+        }
+
+        .details-toggle i {
+            font-size: 0.7rem;
+            transition: transform var(--motion-fast) var(--ease-out);
+        }
+
+        .details-toggle[aria-expanded="true"] i {
+            transform: rotate(180deg);
+        }
+
+        .create-details {
+            display: none;
+            gap: 0.625rem;
+        }
+
+        .create-details-open {
+            display: grid;
+            animation: edit-panel-in var(--motion-med) var(--ease-out) both;
         }
 
         .modal-backdrop {
@@ -128,6 +215,24 @@
             justify-content: center;
             background: rgb(2 6 23 / 0.5);
             padding-inline: 1rem;
+            opacity: 0;
+            backdrop-filter: blur(0);
+            transition: opacity var(--motion-med) ease, backdrop-filter var(--motion-med) ease;
+        }
+
+        .modal-backdrop.flex {
+            animation: modal-fade-in var(--motion-med) ease both;
+        }
+
+        .modal-backdrop.modal-closing {
+            animation: none;
+            opacity: 0;
+            backdrop-filter: blur(0);
+        }
+
+        .modal-backdrop.flex:not(.modal-closing) {
+            opacity: 1;
+            backdrop-filter: blur(7px);
         }
 
         .modal-panel {
@@ -138,6 +243,15 @@
             background: white;
             padding: 1.25rem;
             box-shadow: 0 25px 50px -12px rgb(15 23 42 / 0.35);
+            transform-origin: center;
+        }
+
+        .modal-backdrop.flex .modal-panel {
+            animation: modal-panel-in var(--motion-med) var(--ease-spring) both;
+        }
+
+        .modal-backdrop.modal-closing .modal-panel {
+            animation: modal-panel-out var(--motion-fast) ease both;
         }
 
         .modal-icon {
@@ -164,8 +278,16 @@
             border-radius: 0.5rem;
             padding: 0.5rem;
             color: rgb(203 213 225);
-            transition: color 150ms ease;
+            transition: color var(--motion-fast) ease, background-color var(--motion-fast) ease, transform var(--motion-fast) var(--ease-out);
             outline: none;
+        }
+
+        .icon-btn:hover {
+            transform: translateY(-1px) scale(1.04);
+        }
+
+        .icon-btn:active {
+            transform: scale(0.94);
         }
 
         .icon-btn-edit:hover {
@@ -182,23 +304,185 @@
             padding: 0.75rem;
         }
 
+        .reason-preview {
+            display: flex;
+            min-width: 0;
+            align-items: center;
+            gap: 0.35rem;
+            color: rgb(99 102 241);
+        }
+
+        .reason-preview i {
+            flex-shrink: 0;
+            font-size: 0.68rem;
+        }
+
+        .reason-card {
+            border: 1px solid rgb(199 210 254);
+            border-color: rgb(199 210 254);
+            background: rgb(238 242 255 / 0.65);
+        }
+
         .filter-btn {
-            border-radius: 0.75rem;
-            padding: 0.375rem 0.75rem;
+            display: inline-flex;
+            min-width: 4.25rem;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            border-radius: 0.65rem;
+            padding: 0.5rem 0.75rem;
             color: rgb(148 163 184);
             font-size: 0.75rem;
             font-weight: 700;
-            transition: color 150ms ease, background-color 150ms ease;
+            line-height: 1;
+            white-space: nowrap;
+            transition: color var(--motion-fast) ease, background-color var(--motion-fast) ease, border-color var(--motion-fast) ease, transform var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) ease;
             outline: none;
         }
 
+        .filter-btn i {
+            font-size: 0.68rem;
+            opacity: 0.72;
+            transition: opacity var(--motion-fast) ease, transform var(--motion-fast) var(--ease-out);
+        }
+
         .filter-btn:hover {
-            background: rgb(241 245 249);
+            background: white;
+            color: rgb(79 70 229);
+            box-shadow: 0 8px 20px -16px rgb(15 23 42 / 0.55);
+            transform: translateY(-1px);
+        }
+
+        .filter-btn:focus-visible {
+            box-shadow: 0 0 0 2px rgb(199 210 254);
         }
 
         .filter-btn-active {
-            background: rgb(238 242 255);
+            background: white;
             color: rgb(79 70 229);
+            box-shadow: 0 8px 22px -16px rgb(79 70 229 / 0.85), inset 0 0 0 1px rgb(199 210 254);
+            transform: translateY(-1px);
+        }
+
+        .filter-btn-active i {
+            opacity: 1;
+            transform: scale(1.08);
+        }
+
+        .scroll-panel {
+            scrollbar-gutter: stable;
+            scrollbar-width: thin;
+            scrollbar-color: rgb(199 210 254) transparent;
+            overscroll-behavior: contain;
+        }
+
+        .task-scroll-area {
+            flex: 0 0 auto;
+            height: clamp(16rem, 42dvh, 21.875rem);
+            min-height: 0;
+        }
+
+        .scroll-panel::-webkit-scrollbar {
+            width: 0.5rem;
+            height: 0.5rem;
+        }
+
+        .scroll-panel::-webkit-scrollbar-track {
+            background: transparent;
+            border-radius: 9999px;
+        }
+
+        .scroll-panel::-webkit-scrollbar-thumb {
+            border: 2px solid transparent;
+            border-radius: 9999px;
+            background: rgb(199 210 254);
+            background-clip: padding-box;
+        }
+
+        .scroll-panel::-webkit-scrollbar-thumb:hover {
+            background: rgb(129 140 248);
+            background-clip: padding-box;
+        }
+
+        .filter-scroll {
+            flex: 1 1 auto;
+            min-width: 0;
+            max-width: 100%;
+            border-radius: 0.9rem;
+            background: rgb(248 250 252);
+            padding: 0.25rem;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .filter-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        .clear-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+
+        .task-list-actions {
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid rgb(241 245 249);
+        }
+
+        .clear-btn {
+            display: inline-flex;
+            min-height: 2rem;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            border-radius: 0.7rem;
+            padding: 0.45rem 0.65rem;
+            font-size: 0.72rem;
+            font-weight: 800;
+            line-height: 1;
+            color: rgb(148 163 184);
+            background: transparent;
+            transition: color var(--motion-fast) ease, background-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, opacity var(--motion-fast) ease, transform var(--motion-fast) var(--ease-out);
+            outline: none;
+        }
+
+        .clear-btn i {
+            font-size: 0.72rem;
+        }
+
+        .clear-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+        }
+
+        .clear-btn:focus-visible {
+            box-shadow: 0 0 0 2px rgb(254 205 211);
+        }
+
+        .clear-btn:active:not(:disabled) {
+            transform: translateY(1px) scale(0.98);
+        }
+
+        .clear-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.38;
+        }
+
+        .clear-btn-soft:hover:not(:disabled) {
+            background: rgb(255 241 242);
+            color: rgb(225 29 72);
+        }
+
+        .clear-btn-danger {
+            color: rgb(244 63 94);
+            background: rgb(255 241 242);
+        }
+
+        .clear-btn-danger:hover:not(:disabled) {
+            background: rgb(225 29 72);
+            color: white;
+            box-shadow: 0 10px 24px -16px rgb(225 29 72 / 0.95);
         }
 
         .task-row {
@@ -209,13 +493,94 @@
             border: 1px solid rgb(241 245 249);
             background: rgb(248 250 252);
             padding: 0.875rem;
-            transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+            transform-origin: center;
+            animation: task-row-in var(--motion-med) var(--ease-out) backwards;
+            animation-delay: calc(var(--row-index, 0) * 34ms);
+            transition: background-color var(--motion-fast) ease, border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, color var(--motion-fast) ease, opacity var(--motion-fast) ease, transform var(--motion-fast) var(--ease-out);
+        }
+
+        .task-row:hover {
+            border-color: rgb(224 231 255);
+            box-shadow: 0 12px 30px -24px rgb(15 23 42 / 0.45);
+            transform: translateY(-2px);
         }
 
         .task-row-completed {
             border-color: rgb(241 245 249 / 0.5);
             background: rgb(248 250 252 / 0.5);
             color: rgb(148 163 184);
+            opacity: 0.74;
+        }
+
+        .task-row-celebrate {
+            animation: task-row-in var(--motion-med) var(--ease-out) backwards, task-complete-pop 560ms var(--ease-spring) 120ms both;
+        }
+
+        .task-check {
+            position: relative;
+            display: inline-flex;
+            width: 1.5rem;
+            height: 1.5rem;
+            flex-shrink: 0;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.625rem;
+        }
+
+        .task-check-input {
+            position: absolute;
+            inset: 0;
+            cursor: pointer;
+            opacity: 0;
+        }
+
+        .task-check-box {
+            display: flex;
+            width: 1.375rem;
+            height: 1.375rem;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.55rem;
+            border: 1.5px solid rgb(203 213 225);
+            background: white;
+            color: white;
+            box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.85), 0 6px 16px -12px rgb(15 23 42 / 0.8);
+            transform: scale(1);
+            transition: background-color var(--motion-fast) ease, border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, transform var(--motion-fast) var(--ease-spring);
+        }
+
+        .task-check-box i {
+            font-size: 0.7rem;
+            opacity: 0;
+            transform: translateY(2px) scale(0.65);
+            transition: opacity var(--motion-fast) ease, transform var(--motion-fast) var(--ease-spring);
+        }
+
+        .task-check:hover .task-check-box {
+            border-color: rgb(129 140 248);
+            box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.9), 0 10px 20px -14px rgb(79 70 229 / 0.8);
+            transform: scale(1.06);
+        }
+
+        .task-check-input:focus-visible + .task-check-box {
+            box-shadow: 0 0 0 3px rgb(199 210 254), 0 10px 20px -14px rgb(79 70 229 / 0.8);
+        }
+
+        .task-check-input:checked + .task-check-box {
+            border-color: rgb(79 70 229);
+            background: rgb(79 70 229);
+            box-shadow: 0 10px 24px -14px rgb(79 70 229 / 0.9);
+            transform: scale(1.02);
+        }
+
+        .task-check-input:checked + .task-check-box i {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .task-check:active .task-check-box {
+            transform: scale(0.92);
         }
 
         .task-summary {
@@ -226,12 +591,13 @@
             padding: 0.25rem 0.375rem;
             text-align: left;
             outline: none;
-            transition: background-color 150ms ease;
+            transition: background-color var(--motion-fast) ease, transform var(--motion-fast) var(--ease-out);
         }
 
         .task-summary:hover,
         .task-summary:focus {
             background: rgb(241 245 249);
+            transform: translateX(2px);
         }
 
         .task-code {
@@ -244,6 +610,7 @@
             font-size: 0.625rem;
             font-weight: 800;
             line-height: 1;
+            transition: background-color var(--motion-fast) ease, color var(--motion-fast) ease, transform var(--motion-fast) var(--ease-out);
         }
 
         .edit-panel {
@@ -251,6 +618,22 @@
             border: 1px solid rgb(199 210 254);
             background: rgb(238 242 255 / 0.6);
             padding: 0.875rem;
+            animation: edit-panel-in var(--motion-med) var(--ease-out) both;
+        }
+
+        #empty-state:not(.hidden) {
+            display: flex;
+            min-height: 100%;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            animation: empty-state-in var(--motion-slow) var(--ease-out) both;
+        }
+
+        @media (min-width: 640px) {
+            .task-scroll-area {
+                height: 17.5rem;
+            }
         }
 
         .dark .app-input,
@@ -262,14 +645,32 @@
 
         .dark .btn-muted,
         .dark .quick-btn,
+        .dark .details-toggle,
         .dark .btn-danger-soft,
         .dark .detail-card {
             background: rgb(30 41 59);
             color: rgb(148 163 184);
         }
 
+        .dark .details-toggle {
+            color: rgb(129 140 248);
+        }
+
+        .dark .details-toggle:hover {
+            background: rgb(51 65 85);
+        }
+
         .dark .btn-danger-soft {
             color: rgb(251 113 133);
+        }
+
+        .dark .reason-preview {
+            color: rgb(129 140 248);
+        }
+
+        .dark .reason-card {
+            border-color: rgb(49 46 129);
+            background: rgb(30 27 75 / 0.3);
         }
 
         .dark .btn-danger-soft:hover {
@@ -287,11 +688,59 @@
 
         .dark .filter-btn:hover {
             background: rgb(30 41 59);
+            color: rgb(129 140 248);
         }
 
         .dark .filter-btn-active {
-            background: rgb(49 46 129 / 0.5);
+            background: rgb(30 41 59);
             color: rgb(129 140 248);
+            box-shadow: 0 10px 24px -16px rgb(0 0 0 / 0.8), inset 0 0 0 1px rgb(67 56 202 / 0.75);
+        }
+
+        .dark .filter-scroll {
+            background: rgb(15 23 42 / 0.78);
+        }
+
+        .dark .clear-btn {
+            color: rgb(100 116 139);
+        }
+
+        .dark .task-list-actions {
+            border-color: rgb(30 41 59);
+        }
+
+        .dark .clear-btn:focus-visible {
+            box-shadow: 0 0 0 2px rgb(159 18 57 / 0.75);
+        }
+
+        .dark .clear-btn-soft:hover:not(:disabled) {
+            background: rgb(76 5 25 / 0.4);
+            color: rgb(251 113 133);
+        }
+
+        .dark .clear-btn-danger {
+            color: rgb(251 113 133);
+            background: rgb(76 5 25 / 0.4);
+        }
+
+        .dark .clear-btn-danger:hover:not(:disabled) {
+            background: rgb(190 18 60);
+            color: white;
+            box-shadow: 0 10px 24px -16px rgb(251 113 133 / 0.8);
+        }
+
+        .dark .scroll-panel {
+            scrollbar-color: rgb(71 85 105) transparent;
+        }
+
+        .dark .scroll-panel::-webkit-scrollbar-thumb {
+            background: rgb(71 85 105);
+            background-clip: padding-box;
+        }
+
+        .dark .scroll-panel::-webkit-scrollbar-thumb:hover {
+            background: rgb(100 116 139);
+            background-clip: padding-box;
         }
 
         .dark .task-row {
@@ -299,10 +748,36 @@
             background: rgb(30 41 59 / 0.8);
         }
 
+        .dark .task-row:hover {
+            border-color: rgb(67 56 202 / 0.55);
+            box-shadow: 0 14px 36px -24px rgb(0 0 0 / 0.75);
+        }
+
         .dark .task-row-completed {
             border-color: rgb(30 41 59 / 0.5);
             background: rgb(30 41 59 / 0.3);
             color: rgb(71 85 105);
+        }
+
+        .dark .task-check-box {
+            border-color: rgb(71 85 105);
+            background: rgb(15 23 42);
+            box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05), 0 8px 18px -14px rgb(0 0 0 / 0.9);
+        }
+
+        .dark .task-check:hover .task-check-box {
+            border-color: rgb(129 140 248);
+            box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 10px 22px -14px rgb(129 140 248 / 0.65);
+        }
+
+        .dark .task-check-input:focus-visible + .task-check-box {
+            box-shadow: 0 0 0 3px rgb(67 56 202 / 0.55), 0 10px 22px -14px rgb(129 140 248 / 0.65);
+        }
+
+        .dark .task-check-input:checked + .task-check-box {
+            border-color: rgb(129 140 248);
+            background: rgb(99 102 241);
+            box-shadow: 0 10px 24px -14px rgb(129 140 248 / 0.85);
         }
 
         .dark .task-summary:hover,
@@ -341,11 +816,112 @@
         .dark .icon-btn-danger:hover {
             color: rgb(251 113 133);
         }
+
+        @keyframes app-shell-in {
+            from {
+                opacity: 0;
+                transform: translateY(14px) scale(0.985);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes task-row-in {
+            from {
+                opacity: 0;
+                transform: translateY(10px) scale(0.985);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes task-complete-pop {
+            0% {
+                transform: translateY(0) scale(1);
+            }
+            45% {
+                transform: translateY(-2px) scale(1.018);
+                box-shadow: 0 14px 34px -20px rgb(16 185 129 / 0.75);
+            }
+            100% {
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes edit-panel-in {
+            from {
+                opacity: 0;
+                transform: translateY(-8px) scale(0.985);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes empty-state-in {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes modal-fade-in {
+            from {
+                opacity: 0;
+                backdrop-filter: blur(0);
+            }
+            to {
+                opacity: 1;
+                backdrop-filter: blur(7px);
+            }
+        }
+
+        @keyframes modal-panel-in {
+            from {
+                opacity: 0;
+                transform: translateY(14px) scale(0.96);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes modal-panel-out {
+            from {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(10px) scale(0.97);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 1ms !important;
+                animation-delay: 0ms !important;
+                scroll-behavior: auto !important;
+                transition-duration: 1ms !important;
+            }
+        }
     </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-950 min-h-screen min-h-dvh text-slate-800 dark:text-slate-100 flex flex-col justify-between transition-colors duration-200">
 
-    <main class="max-w-md w-full mx-auto p-4 sm:p-6 my-0 sm:my-10 bg-white dark:bg-slate-900 rounded-none sm:rounded-3xl shadow-none sm:shadow-2xl border-0 sm:border border-slate-200 dark:border-slate-800 flex flex-col min-h-screen min-h-dvh sm:min-h-0 sm:h-auto">
+    <main class="app-shell max-w-md w-full mx-auto p-4 sm:p-6 my-0 sm:my-10 bg-white dark:bg-slate-900 rounded-none sm:rounded-3xl shadow-none sm:shadow-2xl border-0 sm:border border-slate-200 dark:border-slate-800 flex flex-col min-h-screen min-h-dvh sm:min-h-0 sm:h-auto">
         
         <!-- App Header -->
         <header class="flex items-center justify-between mb-5 pt-2 sm:pt-0">
@@ -384,7 +960,7 @@
 
         <!-- Add Task Form -->
         <form id="task-form" class="space-y-2.5 mb-5">
-            <div class="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2">
+            <div class="grid grid-cols-[1fr_auto] gap-2">
                 <label for="task-input" class="sr-only">Task title</label>
                 <input 
                     type="text" 
@@ -394,12 +970,6 @@
                     autocomplete="off"
                     class="app-input flex-1"
                 >
-                <label for="date-input" class="sr-only">Due date</label>
-                <input 
-                    type="date" 
-                    id="date-input" 
-                    class="app-input"
-                >
                 <button 
                     type="submit" 
                     class="btn btn-primary px-5 py-3.5 shadow-lg shadow-indigo-600/20"
@@ -407,17 +977,38 @@
                     <i class="fa-solid fa-plus"></i> Add
                 </button>
             </div>
-            <label for="description-input" class="sr-only">Task description</label>
-            <textarea
-                id="description-input"
-                rows="2"
-                placeholder="Task description"
-                class="app-textarea"
-            ></textarea>
-            <div class="grid grid-cols-3 gap-2">
-                <button type="button" onclick="setQuickDate(0)" class="quick-btn">Today</button>
-                <button type="button" onclick="setQuickDate(1)" class="quick-btn">Tomorrow</button>
-                <button type="button" onclick="setQuickDate(null)" class="quick-btn">No date</button>
+            <div class="create-tools">
+                <button id="create-details-toggle" type="button" class="details-toggle" aria-expanded="false" aria-controls="create-details">
+                    <i id="create-details-icon" class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+                    <span id="create-details-label">Details</span>
+                </button>
+            </div>
+            <div id="create-details" class="create-details">
+                <label for="date-input" class="sr-only">Due date</label>
+                <input 
+                    type="date" 
+                    id="date-input" 
+                    class="app-input"
+                >
+                <div class="grid grid-cols-3 gap-2">
+                    <button type="button" onclick="setQuickDate(0)" class="quick-btn">Today</button>
+                    <button type="button" onclick="setQuickDate(1)" class="quick-btn">Tomorrow</button>
+                    <button type="button" onclick="setQuickDate(null)" class="quick-btn">No date</button>
+                </div>
+                <label for="description-input" class="sr-only">Task description</label>
+                <textarea
+                    id="description-input"
+                    rows="2"
+                    placeholder="Task description"
+                    class="app-textarea"
+                ></textarea>
+                <label for="reason-input" class="sr-only">Follow-up reason</label>
+                <textarea
+                    id="reason-input"
+                    rows="2"
+                    placeholder="Reason or note"
+                    class="app-textarea"
+                ></textarea>
             </div>
         </form>
 
@@ -434,22 +1025,18 @@
                     class="app-input pl-9 pr-3.5 py-2.5"
                 >
             </div>
-            <div class="flex items-center justify-between gap-3">
-                <div class="flex gap-1.5 overflow-x-auto pb-0.5">
-                <button onclick="setFilter('all')" type="button" id="filter-all" aria-pressed="true" class="filter-btn filter-btn-active">All</button>
-                <button onclick="setFilter('today')" type="button" id="filter-today" aria-pressed="false" class="filter-btn">Today</button>
-                <button onclick="setFilter('active')" type="button" id="filter-active" aria-pressed="false" class="filter-btn">Active</button>
-                <button onclick="setFilter('completed')" type="button" id="filter-completed" aria-pressed="false" class="filter-btn">Done</button>
-                </div>
-                <div class="flex items-center gap-2 shrink-0">
-                    <button onclick="clearCompletedTasks()" type="button" id="clear-completed" class="text-xs font-medium text-slate-400 hover:text-rose-500 disabled:hover:text-slate-400 dark:hover:text-rose-400 dark:disabled:hover:text-slate-400 transition disabled:opacity-40 disabled:cursor-not-allowed">Clear Done</button>
-                    <button onclick="clearAllTasks()" type="button" id="clear-all" class="text-xs font-medium text-slate-400 hover:text-rose-500 disabled:hover:text-slate-400 dark:hover:text-rose-400 dark:disabled:hover:text-slate-400 transition disabled:opacity-40 disabled:cursor-not-allowed">Clear All</button>
+            <div class="flex items-center">
+                <div class="filter-scroll flex gap-1.5 overflow-x-auto">
+                    <button onclick="setFilter('all')" type="button" id="filter-all" aria-pressed="true" class="filter-btn filter-btn-active"><i class="fa-solid fa-layer-group" aria-hidden="true"></i>All</button>
+                    <button onclick="setFilter('today')" type="button" id="filter-today" aria-pressed="false" class="filter-btn"><i class="fa-regular fa-calendar" aria-hidden="true"></i>Today</button>
+                    <button onclick="setFilter('active')" type="button" id="filter-active" aria-pressed="false" class="filter-btn"><i class="fa-regular fa-circle" aria-hidden="true"></i>Active</button>
+                    <button onclick="setFilter('completed')" type="button" id="filter-completed" aria-pressed="false" class="filter-btn"><i class="fa-solid fa-check" aria-hidden="true"></i>Done</button>
                 </div>
             </div>
         </div>
 
         <!-- Task List Container (Scrollable) -->
-        <div class="flex-1 overflow-y-auto min-h-[200px] max-h-[350px] sm:max-h-[280px] pr-1">
+        <div class="scroll-panel task-scroll-area overflow-y-auto pr-1">
             <ul id="task-list" class="space-y-2.5" aria-live="polite">
                 <!-- Dynamic tasks populated here -->
             </ul>
@@ -460,6 +1047,10 @@
                 <p id="empty-title" class="text-sm font-medium">All caught up! Time to relax.</p>
                 <p id="empty-detail" class="text-xs mt-1">Add a task to start planning your day.</p>
             </div>
+        </div>
+        <div class="clear-actions task-list-actions">
+            <button onclick="clearCompletedTasks()" type="button" id="clear-completed" class="clear-btn clear-btn-soft"><i class="fa-regular fa-circle-check" aria-hidden="true"></i>Clear Done</button>
+            <button onclick="clearAllTasks()" type="button" id="clear-all" class="clear-btn clear-btn-danger"><i class="fa-regular fa-trash-can" aria-hidden="true"></i>Clear All</button>
         </div>
     </main>
 
@@ -528,6 +1119,10 @@
                     <dt class="font-semibold text-slate-400 dark:text-slate-500">Due date</dt>
                     <dd id="details-due" class="mt-0.5 text-slate-700 dark:text-slate-200"></dd>
                 </div>
+                <div class="detail-card reason-card">
+                    <dt class="font-semibold text-indigo-500 dark:text-indigo-300">Follow-up reason</dt>
+                    <dd id="details-reason" class="mt-0.5 text-slate-700 dark:text-slate-200 break-words"></dd>
+                </div>
                 <div class="detail-card">
                     <dt class="font-semibold text-slate-400 dark:text-slate-500">Created</dt>
                     <dd id="details-created" class="mt-0.5 text-slate-700 dark:text-slate-200"></dd>
@@ -554,12 +1149,17 @@
         let pendingCompleteTaskId = null;
         let pendingDeleteAction = null;
         let currentDetailsTaskId = null;
+        let recentlyCompletedTaskId = null;
 
         // Elements
         const taskForm = document.getElementById('task-form');
         const taskInput = document.getElementById('task-input');
         const descriptionInput = document.getElementById('description-input');
+        const reasonInput = document.getElementById('reason-input');
         const dateInput = document.getElementById('date-input');
+        const createDetails = document.getElementById('create-details');
+        const createDetailsToggle = document.getElementById('create-details-toggle');
+        const createDetailsLabel = document.getElementById('create-details-label');
         const searchInput = document.getElementById('search-input');
         const taskList = document.getElementById('task-list');
         const emptyState = document.getElementById('empty-state');
@@ -588,14 +1188,15 @@
         const detailsDescription = document.getElementById('details-description');
         const detailsCode = document.getElementById('details-code');
         const detailsDue = document.getElementById('details-due');
+        const detailsReason = document.getElementById('details-reason');
         const detailsCreated = document.getElementById('details-created');
         const detailsCompleted = document.getElementById('details-completed');
         const closeDetailsButton = document.getElementById('close-details');
         const detailsEditButton = document.getElementById('details-edit');
         const detailsDeleteButton = document.getElementById('details-delete');
 
-        // Set default date to today
-        dateInput.valueAsDate = new Date();
+        // Keep quick-add undated unless the user opens details and chooses a date.
+        dateInput.value = '';
 
         // Initialize Dark Mode preference from local storage
         if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -627,6 +1228,7 @@
             e.preventDefault();
             const title = taskInput.value.trim();
             const description = descriptionInput.value.trim();
+            const reason = reasonInput.value.trim();
             const dueDate = dateInput.value;
             if(!title) return;
 
@@ -635,6 +1237,7 @@
                 taskNo: getNextTaskNumber(),
                 title: title,
                 description: description,
+                reason: reason,
                 dueDate: dueDate,
                 createdAt: new Date().toISOString(),
                 completedAt: null,
@@ -645,8 +1248,14 @@
             saveAndRender();
             taskInput.value = '';
             descriptionInput.value = '';
-            dateInput.valueAsDate = new Date();
+            reasonInput.value = '';
+            dateInput.value = '';
+            setCreateDetailsExpanded(false);
             taskInput.blur(); // Dismiss mobile keyboard
+        });
+
+        createDetailsToggle.addEventListener('click', () => {
+            setCreateDetailsExpanded(!createDetails.classList.contains('create-details-open'));
         });
 
         searchInput.addEventListener('input', (e) => {
@@ -715,28 +1324,25 @@
         function openCompleteModal(task) {
             pendingCompleteTaskId = task.id;
             completeModalTask.innerText = task.title;
-            completeModal.classList.remove('hidden');
-            completeModal.classList.add('flex');
-            confirmComplete.focus();
+            openModal(completeModal, confirmComplete);
             renderTasks();
         }
 
         function closeCompleteModal() {
             pendingCompleteTaskId = null;
-            completeModal.classList.add('hidden');
-            completeModal.classList.remove('flex');
+            closeModal(completeModal);
             renderTasks();
         }
 
         function completePendingTask() {
             if(!pendingCompleteTaskId) return;
+            recentlyCompletedTaskId = pendingCompleteTaskId;
             tasks = tasks.map(task => {
                 if(task.id !== pendingCompleteTaskId) return task;
                 return { ...task, completed: true, completedAt: new Date().toISOString() };
             });
             pendingCompleteTaskId = null;
-            completeModal.classList.add('hidden');
-            completeModal.classList.remove('flex');
+            closeModal(completeModal);
             saveAndRender();
         }
 
@@ -794,15 +1400,12 @@
             deleteModalTitle.innerText = title;
             deleteModalMessage.innerText = message;
             confirmDelete.innerText = actionLabel;
-            deleteModal.classList.remove('hidden');
-            deleteModal.classList.add('flex');
-            confirmDelete.focus();
+            openModal(deleteModal, confirmDelete);
         }
 
         function closeDeleteModal() {
             pendingDeleteAction = null;
-            deleteModal.classList.add('hidden');
-            deleteModal.classList.remove('flex');
+            closeModal(deleteModal);
         }
 
         function runPendingDeleteAction() {
@@ -822,6 +1425,12 @@
             date.setDate(date.getDate() + daysFromToday);
             dateInput.value = formatDateInput(date);
             taskInput.focus();
+        }
+
+        function setCreateDetailsExpanded(isExpanded) {
+            createDetails.classList.toggle('create-details-open', isExpanded);
+            createDetailsToggle.setAttribute('aria-expanded', String(isExpanded));
+            createDetailsLabel.innerText = isExpanded ? 'Hide details' : 'Details';
         }
 
         function setFilter(filter) {
@@ -849,7 +1458,7 @@
 
             if(searchQuery) {
                 filteredTasks = filteredTasks.filter(task => {
-                    const searchableText = `${formatTaskCode(task.taskNo)} ${task.taskNo} ${task.title} ${task.description}`.toLowerCase();
+                    const searchableText = `${formatTaskCode(task.taskNo)} ${task.taskNo} ${task.title} ${task.description} ${task.reason}`.toLowerCase();
                     return searchableText.includes(searchQuery);
                 });
             }
@@ -864,16 +1473,22 @@
                 filteredTasks
                     .slice()
                     .sort(sortTasks)
-                    .forEach(task => {
+                    .forEach((task, index) => {
                     const li = document.createElement('li');
                     li.id = `task-${task.id}`;
-                    li.className = `task-row ${task.completed ? 'task-row-completed' : ''}`;
+                    li.className = `task-row ${task.completed ? 'task-row-completed' : ''} ${task.id === recentlyCompletedTaskId ? 'task-row-celebrate' : ''}`;
+                    li.style.setProperty('--row-index', index);
                     
                     const dateMeta = getDueDateMeta(task);
 
                     li.innerHTML = `
                         <div class="flex items-center gap-3 overflow-hidden flex-1 mr-2">
-                            <input type="checkbox" ${task.completed ? 'checked' : ''} onclick="toggleTask(event, '${task.id}')" aria-label="${task.completed ? 'Mark active' : 'Mark complete'}: ${escapeHTML(task.title)}" class="w-5 h-5 text-indigo-600 rounded-md border-slate-300 dark:border-slate-600 focus:ring-indigo-500 cursor-pointer shrink-0">
+                            <label class="task-check">
+                                <input type="checkbox" ${task.completed ? 'checked' : ''} onclick="toggleTask(event, '${task.id}')" aria-label="${task.completed ? 'Mark active' : 'Mark complete'}: ${escapeHTML(task.title)}" class="task-check-input">
+                                <span class="task-check-box" aria-hidden="true">
+                                    <i class="fa-solid fa-check"></i>
+                                </span>
+                            </label>
                             <button onclick="openTaskDetails('${task.id}')" type="button" class="task-summary" aria-label="View task details: ${escapeHTML(task.title)}">
                                 <span class="flex items-center gap-2">
                                     <span class="task-code">${formatTaskCode(task.taskNo)}</span>
@@ -881,6 +1496,7 @@
                                     <i class="fa-solid fa-chevron-right text-[10px] text-slate-300 dark:text-slate-600 shrink-0" aria-hidden="true"></i>
                                 </span>
                                 ${task.description ? `<p class="mt-0.5 truncate text-xs ${task.completed ? 'text-slate-400 dark:text-slate-600' : 'text-slate-500 dark:text-slate-400'}">${escapeHTML(task.description)}</p>` : ''}
+                                ${task.reason ? `<p class="reason-preview mt-1 truncate text-xs ${task.completed ? 'opacity-60' : ''}"><i class="fa-regular fa-message" aria-hidden="true"></i><span class="truncate">${escapeHTML(task.reason)}</span></p>` : ''}
                                 <div class="flex items-center gap-2 mt-0.5">
                                     ${dateMeta ? `<span class="text-[10px] ${dateMeta.className} flex items-center gap-1"><i class="fa-regular fa-calendar"></i> ${dateMeta.label}</span>` : ''}
                                 </div>
@@ -896,7 +1512,18 @@
                         </div>
                     `;
                     taskList.appendChild(li);
+                    if(task.id === recentlyCompletedTaskId) {
+                        window.setTimeout(() => {
+                            li.classList.remove('task-row-celebrate');
+                            if(recentlyCompletedTaskId === task.id) {
+                                recentlyCompletedTaskId = null;
+                            }
+                        }, 900);
+                    }
                 });
+            }
+            if(recentlyCompletedTaskId && !filteredTasks.some(task => task.id === recentlyCompletedTaskId)) {
+                recentlyCompletedTaskId = null;
             }
             updateStats();
         }
@@ -915,17 +1542,15 @@
             detailsDescription.innerText = task.description || 'No description added.';
             detailsCode.innerText = formatTaskCode(task.taskNo);
             detailsDue.innerText = dateMeta ? dateMeta.label : 'No due date';
+            detailsReason.innerText = task.reason || (task.dueDate ? 'No follow-up reason added.' : 'No deadline reason needed.');
             detailsCreated.innerText = formatDateTime(task.createdAt);
             detailsCompleted.innerText = task.completedAt ? formatDateTime(task.completedAt) : 'Not completed yet';
-            detailsModal.classList.remove('hidden');
-            detailsModal.classList.add('flex');
-            closeDetailsButton.focus();
+            openModal(detailsModal, closeDetailsButton);
         }
 
         function closeTaskDetails() {
             currentDetailsTaskId = null;
-            detailsModal.classList.add('hidden');
-            detailsModal.classList.remove('flex');
+            closeModal(detailsModal);
         }
 
         function updateStats() {
@@ -955,6 +1580,8 @@
                     <input id="edit-title-${task.id}" value="${escapeHTML(task.title)}" required class="app-input py-2.5">
                     <label for="edit-description-${task.id}" class="sr-only">Edit task description</label>
                     <textarea id="edit-description-${task.id}" rows="2" class="app-textarea py-2.5">${escapeHTML(task.description)}</textarea>
+                    <label for="edit-reason-${task.id}" class="sr-only">Edit follow-up reason</label>
+                    <textarea id="edit-reason-${task.id}" rows="2" placeholder="Follow-up reason for deadline" class="app-textarea py-2.5">${escapeHTML(task.reason)}</textarea>
                     <div class="grid grid-cols-1 gap-2">
                         <label for="edit-date-${task.id}" class="sr-only">Edit due date</label>
                         <input type="date" id="edit-date-${task.id}" value="${escapeHTML(task.dueDate)}" class="app-input py-2.5">
@@ -969,8 +1596,36 @@
             const currentRow = document.getElementById(`task-${task.id}`);
             if(currentRow) {
                 currentRow.replaceWith(li);
+                li.style.setProperty('--row-index', 0);
                 document.getElementById(`edit-title-${task.id}`).focus();
             }
+        }
+
+        function openModal(modal, focusTarget) {
+            if(modal.closeTimer) {
+                window.clearTimeout(modal.closeTimer);
+                modal.closeTimer = null;
+            }
+            modal.classList.remove('hidden', 'modal-closing');
+            modal.classList.add('flex');
+            window.requestAnimationFrame(() => {
+                if(focusTarget) focusTarget.focus();
+            });
+        }
+
+        function closeModal(modal) {
+            if(modal.classList.contains('hidden')) return;
+
+            modal.classList.add('modal-closing');
+            modal.closeTimer = window.setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex', 'modal-closing');
+                modal.closeTimer = null;
+            }, prefersReducedMotion() ? 1 : 180);
+        }
+
+        function prefersReducedMotion() {
+            return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         }
 
         function saveEditedTask(event, id) {
@@ -980,6 +1635,7 @@
             updateTask(id, {
                 title,
                 description: document.getElementById(`edit-description-${id}`).value.trim(),
+                reason: document.getElementById(`edit-reason-${id}`).value.trim(),
                 dueDate: document.getElementById(`edit-date-${id}`).value
             });
         }
@@ -1019,6 +1675,7 @@
                 taskNo: normalizeTaskNumber(task.taskNo),
                 title: title,
                 description: String(task.description || '').trim(),
+                reason: String(task.reason || task.followUpReason || '').trim(),
                 dueDate: task.dueDate || '',
                 createdAt: task.createdAt || new Date().toISOString(),
                 completedAt: task.completedAt || null,
